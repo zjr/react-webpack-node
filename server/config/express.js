@@ -9,18 +9,23 @@ import unsupportedMessage from '../db/unsupportedMessage';
 import { sessionSecret } from './secrets';
 import { DB_TYPE, ENV } from './appConfig';
 import { session as dbSession } from '../db';
+import gzip from 'compression';
+import helmet from 'helmet';
+
 
 export default (app) => {
   app.set('port', (process.env.PORT || 3000));
 
-  // X-Powered-By header has no functional value.
-  // Keeping it makes it easier for an attacker to build the site's profile
-  // It can be removed safely
-  app.disable('x-powered-by');
+  if (ENV === 'production') {
+    app.use(gzip());
+    // Secure your Express apps by setting various HTTP headers. Documentation: https://github.com/helmetjs/helmet
+    app.use(helmet());
+  }
 
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
   app.use(methodOverride());
+
   app.use(express.static(path.join(__dirname, '../..', 'public')));
 
   // I am adding this here so that the Heroku deploy will work
@@ -83,6 +88,7 @@ export default (app) => {
     sess.cookie.secure = true; // Serve secure cookies
   }
   console.log('--------------------------');
+
 
   app.use(session(sess));
 
